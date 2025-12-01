@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TX Firearm Bill of Sale (Free)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        .sig-pad { border: 2px dashed #cbd5e1; background-color: #f8fafc; touch-action: none; width: 100%; height: 150px; }
+        .input-group { margin-bottom: 1rem; }
+        label { display: block; font-weight: bold; margin-bottom: 0.25rem; font-size: 0.9rem; }
+        input, select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem; }
+        .section-header { background-color: #1e293b; color: white; padding: 0.5rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-4 pb-20">
+
+    <div class="max-w-md mx-auto bg-white p-6 shadow-lg rounded-lg">
+        <h1 class="text-2xl font-bold text-center mb-2">TX Firearm Bill of Sale</h1>
+        <p class="text-xs text-center text-gray-500 mb-6">Free. Secure. Data stays on your device.</p>
+
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-sm mb-6">
+            <p><strong>Note:</strong> Verify buyer ID personally. This tool generates a PDF for your records only.</p>
+        </div>
+
+        <form id="bosForm">
+            
+            <div class="section-header">1. Seller Information</div>
+            <div class="input-group"><label>Full Name</label><input type="text" id="sellerName" placeholder="John Doe"></div>
+            <div class="input-group"><label>Driver's License / LTC #</label><input type="text" id="sellerDL"></div>
+            <div class="input-group"><label>Address (City/State)</label><input type="text" id="sellerAddr" placeholder="Austin, TX"></div>
+
+            <div class="section-header">2. Buyer Information</div>
+            <div class="input-group"><label>Full Name</label><input type="text" id="buyerName" placeholder="Jane Smith"></div>
+            <div class="input-group"><label>Driver's License / LTC #</label><input type="text" id="buyerDL"></div>
+            <div class="input-group"><label>Address (City/State)</label><input type="text" id="buyerAddr" placeholder="Houston, TX"></div>
+
+            <div class="section-header">3. Firearm Details</div>
+            <div class="input-group"><label>Make</label><input type="text" id="gunMake" placeholder="e.g. Glock"></div>
+            <div class="input-group"><label>Model</label><input type="text" id="gunModel" placeholder="e.g. 19 Gen 5"></div>
+            <div class="input-group"><label>Caliber</label><input type="text" id="gunCaliber" placeholder="e.g. 9mm"></div>
+            <div class="input-group"><label>Serial Number</label><input type="text" id="gunSerial"></div>
+
+            <div class="section-header">4. Documentation Photos</div>
+            <div class="input-group">
+                <label>Photo of Firearm / Serial</label>
+                <input type="file" id="photoGun" accept="image/*" capture="environment">
+            </div>
+            <div class="input-group">
+                <label>Photo of Buyer ID (Optional)</label>
+                <input type="file" id="photoID" accept="image/*" capture="environment">
+            </div>
+
+            <div class="section-header">5. Statements & Signatures</div>
+            <p class="text-xs text-justify mb-4">
+                <strong>Seller:</strong> I certify I am the legal owner of this firearm and sold it AS-IS.<br>
+                <strong>Buyer:</strong> I certify I am not prohibited by law from owning a firearm.
+            </p>
+
+            <label>Seller Signature</label>
+            <canvas id="sellerCanvas" class="sig-pad"></canvas>
+            <button type="button" class="text-xs text-red-500 mb-4" onclick="clearPad(sellerPad)">Clear Seller Sig</button>
+
+            <label>Buyer Signature</label>
+            <canvas id="buyerCanvas" class="sig-pad"></canvas>
+            <button type="button" class="text-xs text-red-500 mb-6" onclick="clearPad(buyerPad)">Clear Buyer Sig</button>
+
+            <button type="button" onclick="generatePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg text-lg">
+                Generate & Download PDF
+            </button>
+            
+            <p class="text-center text-xs text-gray-400 mt-4">No data is sent to any server.</p>
+
+        </form>
+    </div>
+
+    <div class="max-w-md mx-auto mt-6 text-center">
+        <p class="text-sm font-bold text-gray-700">Recommended for you:</p>
+        <div class="bg-gray-200 h-24 flex items-center justify-center rounded mt-2 border border-gray-300">
+            <span class="text-gray-500">[ Ad Space: "Protect your purchase with USCCA" ]</span>
+        </div>
+    </div>
+
+    <script>
+        // 1. Setup Signatures
+        const sellerCanvas = document.getElementById('sellerCanvas');
+        const buyerCanvas = document.getElementById('buyerCanvas');
+        
+        function resizeCanvas(canvas) {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+        window.onresize = function() { resizeCanvas(sellerCanvas); resizeCanvas(buyerCanvas); };
+        resizeCanvas(sellerCanvas); resizeCanvas(buyerCanvas);
+
+        const sellerPad = new SignaturePad(sellerCanvas);
+        const buyerPad = new SignaturePad(buyerCanvas);
+
+        function clearPad(pad) { pad.clear(); }
+
+        // 2. Image Handling Helper
+        const getBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                if(!file) resolve(null);
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        };
+
+        // 3. PDF Generation Logic
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Get Values
+            const sName = document.getElementById('sellerName').value;
+            const bName = document.getElementById('buyerName').value;
+            const gunInfo = `${document.getElementById('gunMake').value} ${document.getElementById('gunModel').value} (${document.getElementById('gunCaliber').value})`;
+            const serial = document.getElementById('gunSerial').value;
+
+            // Header
+            doc.setFontSize(22);
+            doc.text("Texas Firearm Bill of Sale", 20, 20);
+            
+            doc.setFontSize(10);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 30);
+
+            // Details
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Seller Details:", 20, 45);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Name: ${sName}`, 20, 52);
+            doc.text(`DL/LTC: ${document.getElementById('sellerDL').value}`, 20, 59);
+            doc.text(`Address: ${document.getElementById('sellerAddr').value}`, 20, 66);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Buyer Details:", 110, 45); // Right column
+            doc.setFont("helvetica", "normal");
+            doc.text(`Name: ${bName}`, 110, 52);
+            doc.text(`DL/LTC: ${document.getElementById('buyerDL').value}`, 110, 59);
+            doc.text(`Address: ${document.getElementById('buyerAddr').value}`, 110, 66);
+
+            doc.setLineWidth(0.5);
+            doc.line(20, 75, 190, 75);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Firearm Information:", 20, 85);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Firearm: ${gunInfo}`, 20, 92);
+            doc.text(`Serial Number: ${serial}`, 20, 99);
+
+            // Legal Text
+            doc.setFontSize(8);
+            doc.text("STATEMENT: The Seller certifies that they are the legal owner of the property. The Buyer certifies", 20, 115);
+            doc.text("that they are not restricted or prohibited by law from owning a firearm.", 20, 119);
+            doc.text("The property is sold AS-IS with no warranty implied.", 20, 123);
+
+            // Signatures
+            doc.setFontSize(12);
+            if (!sellerPad.isEmpty()) {
+                doc.addImage(sellerPad.toDataURL(), 'PNG', 20, 130, 60, 30);
+                doc.text("Seller Signature", 20, 165);
+            }
+            if (!buyerPad.isEmpty()) {
+                doc.addImage(buyerPad.toDataURL(), 'PNG', 110, 130, 60, 30);
+                doc.text("Buyer Signature", 110, 165);
+            }
+
+            // Handle Images (If uploaded)
+            const gunPhoto = document.getElementById('photoGun').files[0];
+            const idPhoto = document.getElementById('photoID').files[0];
+
+            let yPos = 180;
+            if (gunPhoto) {
+                const imgData = await getBase64(gunPhoto);
+                if(imgData) {
+                    doc.text("Attached Image: Firearm", 20, yPos);
+                    doc.addImage(imgData, 'JPEG', 20, yPos + 5, 80, 60); 
+                }
+            }
+            if (idPhoto) {
+                const imgData = await getBase64(idPhoto);
+                if(imgData) {
+                    doc.text("Attached Image: ID", 110, yPos);
+                    doc.addImage(imgData, 'JPEG', 110, yPos + 5, 80, 60);
+                }
+            }
+
+            // Save
+            doc.save(`BillOfSale_${bName}.pdf`);
+        }
+    </script>
+</body>
+</html>
