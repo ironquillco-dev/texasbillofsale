@@ -3,14 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TX Firearm Bill of Sale (Free)</title>
-    <!-- Tailwind for styling -->
+    <title>TX Firearm Bill of Sale (Premium)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Signature Pad Library -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <!-- jsPDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- QR Code Generator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
@@ -21,35 +17,32 @@
         .section-header { background-color: #1e293b; color: white; padding: 0.5rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; border-radius: 4px; }
         .legal-list { list-style-type: disc; margin-left: 1.5rem; font-size: 0.8rem; color: #4b5563; }
         .legal-list li { margin-bottom: 0.25rem; }
+        /* Modal Styles */
+        #paymentModal { transition: opacity 0.3s ease; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-4 pb-20">
 
-    <div class="max-w-md mx-auto bg-white p-6 shadow-lg rounded-lg">
+    <div class="max-w-md mx-auto bg-white p-6 shadow-lg rounded-lg relative">
         <h1 class="text-2xl font-bold text-center mb-2">TX Firearm Bill of Sale</h1>
-        <p class="text-xs text-center text-gray-500 mb-6">Free. Secure. Data stays on your device.</p>
+        <p class="text-xs text-center text-gray-500 mb-6">Secure. Legally Compliant. Instant.</p>
 
-        <!-- DISCLAIMER -->
         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-sm mb-6">
-            <p><strong>Note:</strong> Verify buyer ID personally. This tool generates a PDF for your records only.</p>
+            <p><strong>Note:</strong> Verify buyer ID personally. This tool generates a PDF for your records.</p>
         </div>
 
-        <!-- FORM START -->
         <form id="bosForm">
             
-            <!-- SELLER INFO -->
             <div class="section-header">1. Seller Information</div>
             <div class="input-group"><label>Full Name</label><input type="text" id="sellerName" placeholder="John Doe"></div>
             <div class="input-group"><label>Driver's License / LTC #</label><input type="text" id="sellerDL"></div>
             <div class="input-group"><label>Address (City/State)</label><input type="text" id="sellerAddr" placeholder="Austin, TX"></div>
 
-            <!-- BUYER INFO -->
             <div class="section-header">2. Buyer Information</div>
             <div class="input-group"><label>Full Name</label><input type="text" id="buyerName" placeholder="Jane Smith"></div>
             <div class="input-group"><label>Driver's License / LTC #</label><input type="text" id="buyerDL"></div>
             <div class="input-group"><label>Address (City/State)</label><input type="text" id="buyerAddr" placeholder="Houston, TX"></div>
 
-            <!-- FIREARM INFO -->
             <div class="section-header">3. Firearm Details</div>
             <div class="input-group"><label>Make</label><input type="text" id="gunMake" placeholder="e.g. Glock"></div>
             <div class="input-group"><label>Model</label><input type="text" id="gunModel" placeholder="e.g. 19 Gen 5"></div>
@@ -57,7 +50,6 @@
             <div class="input-group"><label>Serial Number</label><input type="text" id="gunSerial"></div>
             <div class="input-group"><label>Sale Price ($)</label><input type="number" id="salePrice" placeholder="0.00"></div>
 
-            <!-- PHOTOS -->
             <div class="section-header">4. Documentation Photos</div>
             <div class="input-group">
                 <label>Photo of Firearm / Serial</label>
@@ -68,7 +60,6 @@
                 <input type="file" id="photoID" accept="image/*" capture="environment">
             </div>
 
-            <!-- LEGAL -->
             <div class="section-header">5. Statements & Certifications</div>
             <p class="text-sm font-bold mb-2">Buyer Certification:</p>
             <p class="text-xs mb-2">By signing below, the Buyer certifies they are not restricted or forbidden by law to own a firearm and states that he/she:</p>
@@ -87,7 +78,6 @@
                 <strong>Seller Statement:</strong> I certify I am the legal owner of this firearm and sold it AS-IS with no warranty implied. Seller is not responsible for any damages incurred or caused by the use of this firearm.
             </p>
 
-            <!-- SIGNATURES -->
             <label>Seller Signature</label>
             <canvas id="sellerCanvas" class="sig-pad"></canvas>
             <button type="button" class="text-xs text-red-500 mb-4" onclick="clearPad(sellerPad)">Clear Seller Sig</button>
@@ -96,26 +86,50 @@
             <canvas id="buyerCanvas" class="sig-pad"></canvas>
             <button type="button" class="text-xs text-red-500 mb-6" onclick="clearPad(buyerPad)">Clear Buyer Sig</button>
 
-            <!-- ACTION BUTTON -->
-            <button type="button" onclick="generatePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg text-lg">
-                Generate & Download PDF
-            </button>
+            <div class="mt-8">
+                <button type="button" onclick="initiatePayment()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg shadow-lg text-lg flex justify-center items-center">
+                    <span>Pay & Generate Report</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </button>
+                <p class="text-center text-xs text-gray-500 mt-2">Opens secure Stripe checkout in a new tab.</p>
+            </div>
             
-            <p class="text-center text-xs text-gray-400 mt-4">No data is sent to any server.</p>
-
         </form>
     </div>
 
-    <!-- Hidden Div for QR Code Generation -->
+    <div id="paymentModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-6 rounded-lg shadow-2xl max-w-sm w-full mx-4 text-center">
+            <div class="mb-4 text-green-600 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h2 class="text-xl font-bold mb-2">Step 2: Download</h2>
+            <p class="text-sm text-gray-600 mb-6">
+                Please complete your payment in the new tab. Once paid, click the button below to download your official PDF.
+            </p>
+            
+            <button type="button" onclick="finalizePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md mb-3">
+                I Have Paid - Download PDF
+            </button>
+            
+            <button type="button" onclick="closeModal()" class="text-xs text-gray-400 hover:text-gray-600 underline">
+                Cancel / Return to Edit
+            </button>
+        </div>
+    </div>
+
     <div id="qrcode" style="display:none;"></div>
 
     <script>
         // --- 1. CONFIGURATION ---
         const APP_URL = "https://ironquillco-dev.github.io/texasbillofsale/";
         const PROMO_URL = "https://readymyhome.com";
+        const STRIPE_URL = "https://buy.stripe.com/cNi3cxbZkchF2O0c7q6oo02"; 
 
         // --- 2. QR CODE GENERATION ---
-        // Generate QR on load so it's ready for the PDF
         const qrContainer = document.getElementById("qrcode");
         new QRCode(qrContainer, {
             text: APP_URL,
@@ -141,7 +155,7 @@
 
         function clearPad(pad) { pad.clear(); }
 
-        // --- 4. HELPER: IMAGE TO BASE64 ---
+        // --- 4. IMAGE HANDLING ---
         const getBase64 = (file) => {
             return new Promise((resolve, reject) => {
                 if(!file) resolve(null);
@@ -152,8 +166,32 @@
             });
         };
 
-        // --- 5. PDF GENERATION LOGIC ---
-        async function generatePDF() {
+        // --- 5. PAYMENT FLOW LOGIC ---
+        function initiatePayment() {
+            // Basic Validation Check
+            const sName = document.getElementById('sellerName').value;
+            const bName = document.getElementById('buyerName').value;
+            if(!sName || !bName) {
+                alert("Please fill out at least the Buyer and Seller names before proceeding.");
+                return;
+            }
+
+            // 1. Open Stripe in New Tab
+            window.open(STRIPE_URL, '_blank');
+
+            // 2. Show the "Confirm Download" Modal
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        // --- 6. PDF GENERATION LOGIC ---
+        async function finalizePDF() {
+            // Hide modal immediately to prevent double clicks
+            closeModal();
+            
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
@@ -173,7 +211,7 @@
 
             // --- SELLER / BUYER TABLE ---
             doc.setLineWidth(0.5);
-            doc.line(20, 35, 190, 35); // Top line
+            doc.line(20, 35, 190, 35); 
 
             // Left Column (Seller)
             doc.setFontSize(12);
@@ -195,7 +233,7 @@
             doc.text(`DL/LTC: ${document.getElementById('buyerDL').value}`, 110, 54);
             doc.text(`Address: ${document.getElementById('buyerAddr').value}`, 110, 60);
 
-            doc.line(20, 65, 190, 65); // Bottom of contact section
+            doc.line(20, 65, 190, 65); 
 
             // --- FIREARM DETAILS ---
             doc.setFont("helvetica", "bold");
@@ -207,7 +245,7 @@
 
             doc.line(20, 88, 190, 88); 
 
-            // --- LEGAL CERTIFICATIONS (COMPETITOR LANGUAGE) ---
+            // --- LEGAL CERTIFICATIONS ---
             doc.setFont("helvetica", "bold");
             doc.setFontSize(9);
             doc.text("BUYER CERTIFICATION & LEGAL STATEMENT", 20, 95);
@@ -242,9 +280,8 @@
             // --- SIGNATURES ---
             let ySig = yLeg + 25;
             
-            // Signature boxes
-            doc.rect(20, ySig, 80, 25); // Seller Box
-            doc.rect(110, ySig, 80, 25); // Buyer Box
+            doc.rect(20, ySig, 80, 25); 
+            doc.rect(110, ySig, 80, 25); 
 
             if (!sellerPad.isEmpty()) {
                 doc.addImage(sellerPad.toDataURL(), 'PNG', 25, ySig + 2, 70, 20);
@@ -260,7 +297,7 @@
             doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, ySig + 30);
 
 
-            // --- PHOTOS (Dynamic positioning) ---
+            // --- PHOTOS ---
             const gunPhoto = document.getElementById('photoGun').files[0];
             const idPhoto = document.getElementById('photoID').files[0];
             let yPhoto = ySig + 40;
@@ -269,7 +306,6 @@
                 const imgData = await getBase64(gunPhoto);
                 if(imgData) {
                     doc.text("Attached Image: Firearm", 20, yPhoto);
-                    // Aspect ratio protection (max width 80, max height 60)
                     doc.addImage(imgData, 'JPEG', 20, yPhoto + 5, 80, 60); 
                 }
             }
@@ -282,34 +318,28 @@
             }
 
             // --- FOOTER & QR CODE ---
-            // Draw a light gray footer background
             doc.setFillColor(240, 240, 240);
-            doc.rect(0, 270, 210, 30, 'F'); // Full width footer
+            doc.rect(0, 270, 210, 30, 'F'); 
 
-            // Add Text Blurb
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
             doc.text("Generated securely by the TX-BOS PWA. No data was stored on any server.", 10, 278);
             doc.text("Create your own digital Bill of Sale for free at:", 10, 283);
             
-            // Link to PWA
             doc.setTextColor(0, 0, 255);
             doc.textWithLink(APP_URL, 10, 288, { url: APP_URL });
 
-            // ReadyMyHome Promo
             doc.setTextColor(100, 100, 100);
             doc.text("For Home Security & Preparedness, visit:", 120, 278);
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
-            doc.setTextColor(220, 38, 38); // Red color
+            doc.setTextColor(220, 38, 38); 
             doc.textWithLink("ReadyMyHome.com", 120, 283, { url: PROMO_URL });
 
-            // Add Generated QR Code
             const qrCanvas = document.querySelector("#qrcode canvas");
             if(qrCanvas) {
                 const qrData = qrCanvas.toDataURL("image/png");
                 doc.addImage(qrData, 'PNG', 175, 272, 25, 25);
-                // Make the QR Code Clickable
                 doc.link(175, 272, 25, 25, { url: APP_URL });
             }
 
